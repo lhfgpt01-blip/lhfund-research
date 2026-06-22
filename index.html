@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LHFund Research Hub — บทวิเคราะห์และข่าวสารการลงทุน</title>
+  <meta name="description" content="LHFund Research Hub - บทวิเคราะห์ ข่าวสารการลงทุน แนวรับ-แนวต้าน Portfolio Strategy">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d9488'/><text x='4' y='23' font-size='18' font-weight='800' fill='white' font-family='sans-serif'>LH</text></svg>">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { height: 100%; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useCallback, useMemo } = React;
+
+const FUND_META = {
+  LHGALPHA: { name: "LHGALPHA", label: "Global Equity", color: "#0f766e" },
+  LHGIGO: { name: "LHGIGO", label: "IG Opportunities", color: "#0d9488" },
+  LHAI: { name: "LHAI", label: "Generative AI", color: "#6366f1" },
+  LHSEMICON: { name: "LHSEMICON", label: "Semiconductor", color: "#8b5cf6" },
+  LHDRAM: { name: "LHDRAM", label: "Memory/DRAM", color: "#a78bfa" },
+  LHHUMANOID: { name: "LHHUMANOID", label: "Humanoid Robotics", color: "#f59e0b" },
+  LHQTUM: { name: "LHQTUM", label: "Quantum Computing", color: "#06b6d4" },
+  LHGBLOCK: { name: "LHGBLOCK", label: "Blockchain", color: "#f97316" },
+  LHCOPPER: { name: "LHCOPPER", label: "Copper", color: "#b45309" },
+  LHESPORT: { name: "LHESPORT", label: "Esports/Gaming", color: "#ec4899" },
+  LHCYBER: { name: "LHCYBER", label: "Cybersecurity", color: "#10b981" },
+  LHSOLAR: { name: "LHSOLAR", label: "Solar Energy", color: "#eab308" },
+  LHSPACE: { name: "LHSPACE", label: "Space Economy", color: "#3b82f6" },
+  LHNUKZ: { name: "LHNUKZ", label: "Nuclear Energy", color: "#ef4444" },
+  LHGDEFENSE: { name: "LHGDEFENSE", label: "Defense", color: "#64748b" },
+  LHLONGEVITY: { name: "LHLONGEVITY", label: "Healthcare", color: "#14b8a6" },
+  LHGAS: { name: "LHGAS", label: "Natural Gas", color: "#78716c" },
+  LHGRID: { name: "LHGRID", label: "Smart Grid", color: "#0ea5e9" },
+};
+
+const CATEGORY_LABELS = { "daily-brief": "สรุปตลาดรายวัน", "fund-insight": "วิเคราะห์เชิงลึก", "news-brief": "สรุปข่าว" };
+const CATEGORY_ICONS = { "daily-brief": "📊", "fund-insight": "🔬", "news-brief": "📰" };
+
+const PORTFOLIO_DATA = {
+  core: {
+    weight: "80%",
+    title: "Core Portfolio",
+    desc: "พอร์ตหลักเพื่อการเติบโตอย่างมั่นคง ลงทุนในสินทรัพย์หลักเพื่อสร้างการเติบโตระยะยาว พร้อมรักษาเสถียรภาพของพอร์ต",
+    funds: [
+      { code: "LHGALPHA", risk: 6, name: "กองทุนหุ้นทั่วโลก (Global Equity)", desc: "ลงทุนใน Fullerton Lux Funds - Global Absolute Alpha ที่เน้นหุ้นเติบโตสูงทั่วโลก เพื่อสร้างผลตอบแทนแบบ Absolute Alpha" },
+      { code: "LHGIGO", risk: 4, name: "กองทุนตราสารหนี้คุณภาพดีทั่วโลก", desc: "ลงทุนใน Man Global Investment Grade Opportunities ที่เน้นคัดเลือกผู้ออกตราสารคุณภาพสูงรายตัวผ่านการวิเคราะห์เชิงลึก" },
+    ],
+  },
+  satellite: {
+    weight: "20%",
+    title: "Satellite Portfolio",
+    desc: "พอร์ตเสริมเพื่อเพิ่มโอกาสรับผลตอบแทนและกระจายความเสี่ยง ลงทุนในธีมและภูมิภาคศักยภาพ ผ่าน 3 แนวทาง",
+    strategies: [
+      { name: "Contrarian Strategy", funds: [{ code: "LHGAS", risk: 7, label: "Natural Gas" }, { code: "LHHUMANOID", risk: 6, label: "Humanoid Robotics" }] },
+      { name: "Momentum Strategy", funds: [{ code: "LHQTUM", risk: 7, label: "Quantum Technology" }, { code: "LHDRAM", risk: 7, label: "Memory Chip" }] },
+      { name: "Medium-Term Strategy", funds: [{ code: "LHAI", risk: 6, label: "Generative AI" }, { code: "LHSOLAR", risk: 6, label: "Solar Energy" }] },
+    ],
+  },
+};
+
+const INITIAL_TECHNICALS = {
+  asOf: "16/6/2026",
+  funds: [
+    { code: "LHLONGEVITY", etf: "CANC", sup: [36.62, 34.57], res: [39.0, 40] },
+    { code: "LHGDEFENSE", etf: "SHLD", sup: [62.21, 60.50], res: [69.11, 71.99] },
+    { code: "LHCOPPER", etf: "COPX", sup: [83.88], res: [92.64, 94.43] },
+    { code: "LHAI", etf: "CHAT", sup: [92.1, 87], res: [104] },
+    { code: "LHNUKZ", etf: "NUKZ", sup: [66.43], res: [74.7, 77.34] },
+    { code: "LHQTUM", etf: "QTUM", sup: [156, 146], res: [186] },
+    { code: "LHSPACE", etf: "ARKX", sup: [33.97], res: [37.98] },
+    { code: "LHHUMANOID", etf: "BOTT", sup: [49.30], res: [55, 57.0] },
+    { code: "LHSEMICON", etf: "SOXX", sup: [562], res: [709] },
+    { code: "LHGBLOCK", etf: "DAPP", sup: [20.19], res: [23.39] },
+    { code: "LHSOLAR", etf: "TAN", sup: [58.93], res: [69.68, 73.8] },
+    { code: "LHESPORT", etf: "ESPO", sup: [86.94], res: [95.60, 97.56] },
+    { code: "LHCYBER", etf: "CIBR LN", sup: [48.33], res: [58.35] },
+    { code: "LHGAS", etf: "FCG", sup: [27], res: [30.93, 31.73] },
+  ],
+};
+
+const INITIAL_ARTICLES = [  {
+    id: "art_20260618_001",
+    title: "วิเคราะห์ ETF รายวัน: Fed Hawkish แต่ตลาด Rebound จาก Iran Deal และ Apple-Intel Chip Deal",
+    date: "2026-06-18",
+    funds: ["LHDRAM", "LHSEMICON", "LHAI", "LHHUMANOID", "LHSOLAR", "LHQTUM", "LHGBLOCK"],
+    category: "daily-brief",
+    summary: "FOMC ภายใต้ประธาน Kevin Warsh ส่งสัญญาณ hawkish ดัน median fed funds rate เป็น 3.8% แต่ตลาดฟื้นตัวแรงวันที่ 18 มิ.ย. จากข้อตกลง US-Iran กดราคาน้ำมัน, Trump ประกาศ Apple-Intel chip deal และ risk-on sentiment",
+    content: `ทำไม Fed มีทิศทางจะขึ้นดอกเบี้ย?
+
+การประชุม FOMC วันที่ 16-17 มิถุนายน 2569 ซึ่งเป็นครั้งแรกภายใต้ประธาน Kevin Warsh เปิดเผยว่าคณะกรรมการ 9 จาก 18 คนคาดการณ์การปรับขึ้นอัตราดอกเบี้ยอย่างน้อย 1 ครั้งภายในปีนี้ โดย median ของ fed funds rate ณ สิ้นปีปรับขึ้นเป็น 3.8% จากเดิม 3.4%
+
+ทำไม ETF เหล่านี้ถึงขึ้นในวันที่ 18 มิถุนายน ทั้งที่ Fed hawkish?
+
+วันที่ 17 มิถุนายน ตลาดปรับตัวลงแรง แต่วันที่ 18 มิถุนายนเกิดการ rebound จาก 3 ปัจจัยหลัก คือ (1) ข้อตกลง US-Iran มีผลบังคับใช้ ลดแรงกดดันเงินเฟ้อ (2) Trump ประกาศ Apple-Intel chip deal สร้าง catalyst เฉพาะ sector เซมิคอนดักเตอร์ (3) ตลาดมองว่าการเทขายวันก่อนหน้าเป็น overreaction
+
+🔹 DRAM (▲9.66%) — กองทุนหลัก LHDRAM
+ปัจจัยบวก: Nvidia-SK hynix partnership, Intel-Apple deal ยืนยันวัฏจักรเซมิคอนดักเตอร์, Baird ย้ำ Buy rating Micron PT $443
+พื้นฐาน: AUM เกือบ $17 พันล้าน YTD ~161% เป็น pure-play exposure ต่อ memory supercycle
+
+🔹 SOXX (▲6.62%) — กองทุนหลัก LHSEMICON
+ปัจจัยบวก: Apple-Intel chip deal บน 18A-P process ทำให้ Intel พุ่ง 11%, Micron +4%, Lam Research +5%
+พื้นฐาน: Nvidia Q1 FY27 revenue $81.6B (+85% YoY) Data Center $75.2B (+92% YoY)
+
+🔹 CHAT (▲5.65%) — กองทุนหลัก LHAI
+ปัจจัยบวก: SpaceX ซื้อ Cursor $60B, SpaceX-Google สัญญา compute $920M/เดือน, AI coding tools revenue $12.8B
+พื้นฐาน: Hyperscaler capex รวมกันเกิน $710B ในปี 2569
+
+🔹 BOTT (▲3.78%) — กองทุนหลัก LHHUMANOID
+ปัจจัยบวก: AI infrastructure rally ลากหุ้น robotics, น้ำมันลดจาก Iran deal ลดต้นทุนอุตสาหกรรม
+พื้นฐาน: อุตสาหกรรม humanoid robotics เปลี่ยนผ่านจาก prototype สู่ pilot production
+
+🔹 TAN (▲3.64%) — กองทุนหลัก LHSOLAR
+ปัจจัยบวก: Bloom Energy +15.41%, data center เผชิญอุปสรรคพลังงาน, DTE Energy กู้ $1.6B
+พื้นฐาน: ความต้องการพลังงานสำหรับ AI data center เพิ่มขึ้นแบบ exponential
+
+🔹 QTUM (▲3.39%) — กองทุนหลัก LHQTUM
+ปัจจัยบวก: ฝรั่งเศสจัดซื้อ quantum computer จาก Alice & Bob, PsiQuantum เปิด Lab, WISeKey ขยายดาวเทียม
+พื้นฐาน: Quantum computing เปลี่ยนจาก R&D สู่ commercial deployment
+
+🔹 DAPP (▲2.75%) — กองทุนหลัก LHGBLOCK
+ปัจจัยบวก: Risk-on sentiment จาก US-Iran deal, SpaceX มี BTC 18,712 ใน treasury
+พื้นฐาน: หุ้น digital transformation มีรายได้จากธุรกิจจริง outperform BTC ในวัน risk-on`,
+  },
+  {
+    id: "art_20260619_001",
+    title: "Humanoid Robotics: สงครามราคาและห่วงโซ่อุปทานที่ซับซ้อนขึ้น",
+    date: "2026-06-19",
+    funds: ["LHHUMANOID"],
+    category: "fund-insight",
+    summary: "Mega Trend ระยะยาวยังแข็งแกร่ง แต่ระยะสั้นเข้าสู่ช่วงคัดกรองผู้ชนะ — Unitree กำไร Q1 ร่วง 52% แม้รายได้โต 68%, Goldman Sachs ปรับเป้าขึ้น 6 เท่า, Morgan Stanley คาด USD 5 Trillion ภายในปี 2050",
+    content: `📉 สงครามราคากำลังบีบ Margin ผู้ผลิตทั้ง Sector
+
+Unitree Robotics รายงาน Adjusted Net Profit ลดลง 52% YoY เหลือ 40.3 ล้านหยวนใน Q1/2026 แม้จะมี Revenue Growth ถึง 68% ราคาเฉลี่ย Humanoid ลดจาก USD 50,000+ เหลือ USD 27,300 ภายใน 12-18 เดือน Unitree R1 เปิดตัวที่ USD 5,900 สร้างแรงกดดันทั่ว Sector
+
+🤖 Rare Earth Restrictions ยังเป็นจุดเปราะบางเชิงโครงสร้าง
+
+จีนบังคับใช้ข้อจำกัดการส่งออกแร่หายาก 7 ประเภท รวมถึง Neodymium และ Dysprosium สำหรับ Actuator Tesla ต้องเร่งพัฒนา Terafab เพื่อลดการพึ่งพา Supply Chain จีนที่ควบคุมการผลิตราว 60%
+
+🏭 Richtech Robotics ถูก Nasdaq เตือน Delist
+
+Richtech (น้ำหนัก 4.86% ใน ETF) ถูก Nasdaq ออกหนังสือ Noncompliance จากการยื่นงบล่าช้า หุ้นร่วง 70%+ จากจุดสูงสุด ผู้ผลิตจีนมากกว่า 150 รายเตือน Overcapacity
+
+🔬 Mega Trend ระยะยาวยังแข็งแกร่ง
+
+Goldman Sachs ปรับเป้า 2035 ขึ้น 6 เท่าเป็น USD 38 billion Morgan Stanley คาด USD 5 Trillion ภายในปี 2050 ต้นทุนฮาร์ดแวร์ลดลง 68% ภายินปี 2030
+
+📌 ส่งผลต่อ LHHUMANOID อย่างไร?
+
+สงครามราคาและปัญหา Supply Chain ส่งผลให้ Earnings Visibility อ่อนตัวลง แต่ Secular Demand ยังแข็งแกร่ง เป็นช่วง Consolidation ที่ผู้ชนะจะถูกคัดแยก
+
+📗 ผู้ที่ถือ — Take Profit 30-50% เพื่อล็อกกำไรถือว่าสมเหตุสมผล
+📕 ผู้ที่ขาดทุน — ติดตาม Q2/2026, Rare Earth Policy, Unitree IPO
+📘 ผู้ที่สนใจ — รอ ETF Correct ลงอีก 10-15% ค่อยทยอยสะสม
+
+Source: SemiAnalysis, Goldman Sachs, Morgan Stanley, TechCrunch, Benzinga`,
+  },
+  {
+    id: "art_20260615_001",
+    title: "ลงทุนกลุ่ม Material: ทำไมเหมืองทองแดงน่าสนใจกว่าเหมืองทอง?",
+    date: "2026-06-15",
+    funds: ["LHCOPPER"],
+    category: "fund-insight",
+    summary: "COPX vs RING — เหมืองทองแดงมี Structural Growth จาก AI, EV, Grid ขณะที่ Supply ขาดดุลรุนแรง ผลตอบแทน YTD +18.55% vs -5.85% LHCOPPER ขาดทุนเพียง -0.30% ขณะที่กองทอง/เงินร่วง -23% ถึง -31%",
+    content: `🔎 ถ้าวันนี้อยากลงทุนหุ้นกลุ่มเหมืองแร่ คำถามสำคัญคือ "เหมืองอะไร?"
+
+ในยุคเศรษฐกิจ AI และพลังงานสะอาด หุ้นเหมืองทองแดงมีโครงสร้างการเติบโตที่แข็งแกร่งกว่าเหมืองทองคำมาก
+
+📊 ผลตอบแทน COPX vs RING (12 มิ.ย. 2569)
+
+▸ 1 เดือน: COPX -3.59% vs RING -17.70%
+▸ 3 เดือน: COPX +10.28% vs RING -14.24%
+▸ YTD: COPX +18.55% vs RING -5.85%
+▸ 1 ปี: COPX +103.08% vs RING +56.37%
+▸ Dividend: COPX 2.24% vs RING 0.71%
+
+🇹🇭 LHCOPPER ทิ้งห่างกองโลหะมีค่า (3 เดือน)
+
+✅ LHCOPPER: -0.30%
+❌ DAOL-GOLD: -31.29%
+❌ DAOL-SILVER: -23.01%
+❌ A-RING: -23.51%
+
+🏗️ ทำไมเหมืองทองแดงมี Growth ที่ทองคำไม่มี?
+
+1️⃣ AI Data Center — Hyperscale 1 แห่งใช้ทองแดง 50,000 ตัน J.P. Morgan คาด 475,000 ตัน/ปี ในปี 2026
+2️⃣ Supply Deficit — ICSG คาดขาดดุล 150,000-330,000 ตัน เหมืองใหม่ใช้เวลา 15-29 ปี
+3️⃣ EV + Grid + Defense — รถ EV ใช้ทองแดงมากกว่ารถน้ำมัน 3-4 เท่า
+
+🕊️ ถ้าสงครามจบ — ทองแดง Rally ทุกครั้งที่มีสัญญาณสันติภาพ
+
+▸ เม.ย. ceasefire → +4% ใน 1 วัน
+▸ พ.ค. peace talks → แตะ $13,400/ตัน
+▸ 12 มิ.ย. Trump ส่งสัญญาณ deal → พุ่งทันที
+
+💡 สงครามคือ "แรงกดดันชั่วคราว" แต่ Demand ทองแดงคือ "แรงขับเคลื่อนถาวร"
+
+🧭 สรุป: LHCOPPER ลงทุนใน Global X Copper Miners ETF (COPX) AUM $7.47 พันล้าน Growth จาก AI, EV, Grid, Defense + Supply ขาดดุลรุนแรง + Dividend 2.24%
+
+⚠️ ผลการดำเนินงานในอดีตไม่ได้เป็นสิ่งยืนยันถึงผลการดำเนินงานในอนาคต`,
+  },
+  {
+    id: "art_20260617_001",
+    title: "Cybersecurity Sector: ตลาดกว่า 2.5 แสนล้านดอลลาร์กำลัง Re-rate — AI Security กลายเป็น Non-Discretionary Budget",
+    date: "2026-06-17",
+    funds: ["LHCYBER"],
+    category: "fund-insight",
+    summary: "TAM ขยายจาก $248B สู่ $699B ภายินปี 2034 ด้วย CAGR 13.8% — CrowdStrike ทำ record ARR $5.51B ประกาศ 4-for-1 stock split, Palo Alto เผย AI security demand off the charts",
+    content: `🛡️ ตลาด Cybersecurity แตะ 2.5 แสนล้านดอลลาร์
+
+ตลาด Cybersecurity โลกคาดเติบโตจาก $248B ในปี 2569 สู่ $699B ภายินปี 2577 ด้วย CAGR 13.8% Cybersecurity spending เปลี่ยนจาก discretionary เป็น mission-critical
+
+📊 CrowdStrike Q1 FY2027 — Record ใหม่ทุกด้าน
+
+Record net new ARR $256M (+32% YoY), ARR รวม $5.51B (+24% YoY), FCF $468M Beat consensus ทั้ง EPS ($1.10 vs $1.07) และรายได้ ($1.39B vs $1.36B) แต่หุ้นร่วง 8% จาก high-expectation correction ประกาศ 4-for-1 stock split มีผล 2 ก.ค. 2569
+
+🧠 "Mythos Era" — AI Security กลายเป็น Infrastructure
+
+CEO George Kurtz: "โลก cybersecurity และ frontier AI มาบรรจบกัน" Palo Alto CEO: demand "off the charts" กว่า 1,200 บริษัทติดต่อด้าน AI security
+
+🌍 สงคราม US-Iran เป็น Structural Catalyst ระยะยาว
+
+Nation-state actors อยู่ใน threat landscape ระดับสูง การลงทุน cybersecurity เป็น multi-year commitment ยกเลิกได้ยาก
+
+📈 วิเคราะห์ทางเทคนิค CIBR UCITS
+
+ปรับขึ้นจาก $37.50 สู่ $58.37 (+54% ใน 3 เดือน) ปัจจุบัน $52.08 ที่ Fibonacci 0.236 RSI 59.56 ยังไม่ overbought
+
+📗 ผู้ที่ถือ — High-expectation correction ไม่ใช่ fundamental deterioration ติดตาม EMA $51.74
+📕 ผู้ที่ขาดทุน — Pricing Power ยังแข็งแกร่ง ติดตาม Q1 deal closures จาก Mythos pipeline
+📘 ผู้ที่สนใจ — Zone $49-52 เป็น entry zone ที่มี margin of safety ดีสำหรับ 12-18 เดือน
+
+Source: Fortune Business Insights, CrowdStrike, Palo Alto Networks`,
+  },
+  {
+    id: "art_20260612_001",
+    title: "Oracle ทุบสถิติทุกตัวเลข แต่ตลาดลงโทษ: Buy the Rumor, Sell the Record",
+    date: "2026-06-12",
+    funds: ["LHAI"],
+    category: "fund-insight",
+    summary: "Oracle Q4 FY2026 revenue $19.2B (+21% YoY) beat consensus, OCI โตแรง 93%, RPO พุ่งทะลุ $638B แต่หุ้นปรับลง 4-7% ยืนยัน AI cloud infrastructure cycle ยังแข็งแกร่ง",
+    content: `📊 Q4 FY2026 ทะลุทุกสถิติ แต่หุ้นปรับลง
+
+Revenue $19.2B (+21% YoY) สูงกว่า consensus $19.04B, EPS $2.11 (+24% YoY) vs คาด $1.96 หุ้นร่วง 4-7% after-hours หลังพุ่ง 25% ก่อนประกาศผล
+
+🚀 OCI โตแรง 93%
+
+Cloud Infrastructure revenue $5.8B (+93% YoY) สูงกว่า consensus ~$5.2B Oracle Multicloud AI Database โต 404% เป็น fastest growing business ในประวัติศาสตร์
+
+📋 RPO พุ่งทะลุ $638B
+
+เพิ่มขึ้น $85B จาก Q3 และ +363% YoY demand visibility ระดับ historic แต่ $75B ยังต้องรอ construction เสร็จ
+
+💰 FY2027: Revenue $90B แต่ Capex $70B
+
+EPS guidance $8.05 (+18% YoY) แต่ capex พุ่งเป็น $70B พร้อมระดมทุน $40B เพิ่ม FCF ยังติดลบ -$23.7B
+
+📌 ส่งผลต่อ LHAI อย่างไร?
+
+OCI +93% และ AI Database +404% ยืนยัน AI cloud infrastructure cycle ยังแข็งแกร่ง CHAT ETF ปรับลง 15.3% จาก peak
+
+📈 โซนสะสม CHAT ETF
+
+▸ โซนแรก: $84.1 / EMA $76.36 — support สำคัญ
+▸ โซนที่สอง: EMA $67.93 — Strong Low zone
+
+📗 ผู้ที่ถือ — ปฏิกิริยาตลาดเป็น profit-taking ไม่ใช่การเปลี่ยนแปลงเชิงโครงสร้าง
+📕 ผู้ที่ขาดทุน — AI demand ไม่หายไป ติดตามสถานการณ์อิหร่าน ราคาน้ำมัน ECB
+📘 ผู้ที่สนใจ — ปรับลง 15.3% จาก peak เริ่มน่าสนใจ รอทดสอบ EMA $76.36
+
+Source: Oracle Investor Relations Q4 FY2026`,
+  },
+  {
+    id: "art_20260604_001",
+    title: "Amazon เปิดตัว Proteus หุ่นยนต์โกดังรุ่นใหม่ สั่งงานด้วยภาษาพูด",
+    date: "2026-06-04",
+    funds: ["LHHUMANOID"],
+    category: "news-brief",
+    summary: "Amazon เปิดตัว Proteus เวอร์ชันใหม่ขับเคลื่อนด้วย AI สั่งงานด้วยภาษาพูด ลงทุน €10 พันล้านในเครือข่าย fulfilment ยุโรป พร้อมโชว์ STARK และ Vulcan หุ่นยนต์ที่มีความรู้สึกสัมผัส",
+    content: `🦾 Amazon เปิดตัว Proteus หุ่นยนต์โกดังรุ่นใหม่ สั่งงานด้วยภาษาพูด
+
+Amazon เปิดตัวหุ่นยนต์ Proteus เวอร์ชันใหม่ที่ขับเคลื่อนด้วย AI ในงาน "Delivering the Future" ที่ Dartford ประเทศอังกฤษ วันที่ 4 มิ.ย. 2026 เป็นส่วนหนึ่งของการลงทุนในเครือข่าย fulfilment ยุโรปมูลค่า €10 พันล้าน (~$11.6 พันล้าน)
+
+🤖 เวอร์ชันใหม่สามารถรับคำสั่งจากพนักงานด้วยภาษาพูดปกติ โดยไม่ต้องใช้ซอฟต์แวร์เฉพาะ
+
+VP Scott Dresser กล่าวว่า "คุณบอกว่าต้องทำอะไร มันจะคิดเองว่าจะจัดลำดับความสำคัญ เส้นทาง และเวลาอย่างไร" นอกจากนี้ยังสามารถทำงานได้ทั่วทั้งโกดัง จากเดิมที่จำกัดอยู่แต่บริเวณท่าเทียบสินค้า
+
+🏭 Amazon ยังโชว์ STARK ระบบหยิบจัดสินค้า และ Vulcan หุ่นยนต์ตัวแรกของ Amazon ที่มีความรู้สึกสัมผัส โดย Proteus รุ่นใหม่มีกำหนดเปิดใช้ในยุโรปครึ่งแรกของปี 2027
+
+📌 ส่งผลต่อ LHHUMANOID อย่างไร?
+
+LHHUMANOID — Positive: Amazon ยืนยันการลงทุนระดับ hyperscale ใน embodied AI และ warehouse robotics เป็น structural demand ระยะยาว
+
+Source: Reuters / US News`,
+  },
+  {
+    id: "art_20260608_001",
+    title: "Apple เปิดตัว Siri AI ที่ WWDC 2026 — AI Turnaround ครั้งใหญ่",
+    date: "2026-06-08",
+    funds: ["LHAI", "LHSEMICON"],
+    category: "news-brief",
+    summary: "Apple rebuild Siri ใหม่ทั้งหมดบน Apple Intelligence ใช้ Google Gemini เป็น engine มี conversational AI, visual intelligence, cross-app context — หนุน demand ชิป Apple Silicon สำหรับ on-device AI",
+    content: `🤖 Apple เปิดตัว "Siri AI" ที่ WWDC 2026 — AI Turnaround ครั้งใหญ่
+
+Apple เปิดตัว Siri AI ที่ WWDC 2026 ซึ่งเป็นการ rebuild assistant ใหม่ทั้งหมดบน Apple Intelligence รุ่นถัดไป โดยออกแบบให้ทำงาน on-device เป็นหลักและใช้ Private Cloud Compute สำหรับ requests ที่ซับซ้อน
+
+🧠 Siri AI รุ่นใหม่ใช้ Google Gemini เป็น engine หนุน มีความสามารถด้าน conversational AI, visual intelligence, cross-app context awareness และมาพร้อม standalone app เพื่อแข่งกับ ChatGPT และ Gemini โดยตรง
+
+🛡️ Craig Federighi ย้ำว่า "privacy in AI is non-negotiable" พร้อม iOS 27, macOS Golden Gate 27
+
+🌍 อย่างไรก็ตาม Siri AI จะเปิดตัวเป็น beta ในภาษาอังกฤษก่อน และจะยังไม่พร้อมใช้ในสหภาพยุโรปเนื่องจาก EU Digital Markets Act
+
+📌 ส่งผลต่อกองทุน LHFund อย่างไร?
+
+📊 LHAI — Positive: Apple ยืนยัน AI strategy ที่ชัดเจน หนุน sentiment กลุ่ม AI software และ on-device AI ecosystem
+📊 LHSEMICON — Positive: demand ชิป Apple Silicon สำหรับ on-device AI processing มีแนวโน้มเพิ่มขึ้น
+
+Source: MacRumors`,
+  },
+  {
+    id: "art_20260608_002",
+    title: "Oklo เข้าซื้อกิจการ ARMEC — ขยาย Vertical Integration ด้านผลิตเครื่องปฏิกรณ์",
+    date: "2026-06-08",
+    funds: ["LHNUKZ"],
+    category: "news-brief",
+    summary: "Oklo (NYSE: OKLO) ปิดดีลซื้อ ARMEC บริษัท precision manufacturing ที่ Oak Ridge เสริมความสามารถตั้งแต่ reactor design ถึง fuel fabrication Wedbush มองเป็น accretive acquisition",
+    content: `⚛️ Oklo เข้าซื้อกิจการ ARMEC — ขยาย Vertical Integration
+
+Oklo Inc. (NYSE: OKLO) ประกาศเข้าซื้อกิจการ ARMEC บริษัท precision manufacturing ที่ตั้งอยู่ใน Oak Ridge รัฐ Tennessee ปิดดีลสำเร็จวันที่ 4 มิถุนายน 2026
+
+🏭 สะท้อนกลยุทธ์ vertical integration ที่ Oklo ดึงความสามารถด้านการผลิตมาไว้ในมือเองตั้งแต่ reactor design ไปจนถึง fuel fabrication
+
+🔬 ARMEC มีทีมงาน ~40 คน ที่เป็น engineers, machinists, welders และผู้เชี่ยวชาญด้านนิวเคลียร์ ครอบคลุม precision machining, fabrication, prototyping และ mechanical engineering
+
+💰 Wedbush มองดีลนี้เป็น accretive acquisition ที่เสริมความสามารถให้ Oklo รับ incremental demand ด้าน nuclear energy ได้ดีขึ้น Oklo ยังมีเงินสดและ marketable securities $2.54 พันล้านดอลลาร์ ณ Q1/2026 มีสภาพคล่องเพียงพอสำหรับ M&A เพิ่มเติม
+
+📌 ส่งผลต่อ LHNUKZ อย่างไร?
+
+LHNUKZ — Positive: การเข้าถือครอง manufacturing capability ลดความเสี่ยงด้าน supply chain และเร่ง deployment timeline ของ Oklo ซึ่งเป็น constituent หลักของ Nuclear Renaissance ETF
+
+Source: BusinessWire`,
+  },
+  {
+    id: "art_20260608_003",
+    title: "Bitcoin / LHGBLOCK: ราคาดิ่งต่ำกว่า $63,000 พร้อม RSI Oversold — จุดขาย หรือโอกาสสะสมระยะยาว?",
+    date: "2026-06-08",
+    funds: ["LHGBLOCK"],
+    category: "fund-insight",
+    summary: "Bitcoin ร่วง 12% มาที่ $62,872 ต่ำกว่า EMA ทุกเส้น แต่ RSI 31.51 เข้า Oversold พร้อม Bull Signal จาก Smart Money — LHGBLOCK-A ยัง Outperform คู่แข่ง +19.44% ใน 1 เดือน Spot ETF สะสม Net Inflow $56.4B",
+    content: `₿ Bitcoin ร่วงแรงใน 1 สัปดาห์ — ปัจจัยกดดันหลายทิศทางพร้อมกัน
+
+ราคา Bitcoin ลดลงมาอยู่แถว $62,000 หลังจากทำจุดสูงสุดที่ $72,840 คิดเป็นการปรับลดลงราว 12% ณ วันที่ 8 มิ.ย. 2569 ราคาปิดที่ $62,872 ต่ำกว่า EMA ทุกเส้นบน Chart Daily แรงกดดันจากเงินเฟ้อ ทิศทาง Fed ดอลลาร์แข็ง Strategy ขาย Bitcoin และ Mt. Gox wallet
+
+📊 LHGBLOCK-A ยัง Outperform คู่แข่ง แม้ตลาดปรับฐาน
+
+ผลตอบแทน 1 เดือน:
+✅ LHGBLOCK-A: +19.44% (อันดับ 1)
+▸ SCBBLOC(A): +14.94%
+▸ DAOL-DAPP: +14.37%
+▸ KT-BLOCKCHAIN-A: +11.19%
+
+ผลตอบแทน 3 เดือน +25% และ 1 ปี +28% บ่งชี้ว่า Portfolio Construction สร้าง Alpha เหนือคู่แข่งได้ต่อเนื่อง
+
+📉 RSI Oversold + Smart Money แสดง Bull Signal
+
+ราคา $62,872 ต่ำกว่า EMA ทุกเส้น: EMA-1 $63,316 / EMA-2 $69,278 / EMA-3 $74,706 / EMA-4 $79,754 แต่ RSI ลงมาที่ 31.51 และ Smart Money Concepts ส่ง Bull Signal ครั้งแรกในรอบนี้
+
+▸ แนวรับสำคัญ: $60,000–$62,370 (Weak Low)
+▸ หากหลุด: ทดสอบ $56,000–$58,000
+▸ หาก Reclaim $63,316: แรงขายเริ่มเบาลง
+
+🌐 โครงสร้างสถาบันเปลี่ยนพลวัตของตลาด
+
+Spot Bitcoin ETF สะสม Net Inflow $56.4B สินทรัพย์รวม $116.86B คิดเป็น 6.48% ของ Market Cap ทั้งหมด Post-Halving Pattern ชี้ว่าการแข็งตัวของราคาเกิดใน Day 500–720 ครึ่งหลังปี 2569 ควรติดตาม
+
+📌 ส่งผลต่อ LHGBLOCK อย่างไร?
+
+LHGBLOCK — ราคา Bitcoin ที่ปรับฐานสร้างแรงกดดัน NAV ระยะสั้น แต่ RSI Oversold พร้อม Bull Signal บ่งชี้แรงขายเข้าสู่ Exhaustion ปี 2569 เป็น Tug-of-War ระหว่างสถาบันกับ Long-Term Holders Downside น่าจะมีขอบเขตจำกัด
+
+📗 ผู้ที่ถือและมีกำไร — Alpha ยัง Outperform กลุ่ม RSI Oversold + Bull Signal ยืนยันว่าแรงขายเป็น Cyclical ไม่ใช่ Structural ติดตาม Support $60,000–$62,370
+📕 ผู้ที่ขาดทุน — Momentum ยังไม่กลับตัว ต้อง Reclaim $63,316 ก่อน ติดตาม Spot ETF Flow และทิศทาง Fed Recovery Path สู่ $68,000–$74,000 ยังเป็นไปได้
+📘 ผู้ที่สนใจ — RSI Oversold ทำ Risk/Reward ดีขึ้น แต่ยัง Weak Low ที่ ~$56,000 แนะนำ DCA กระจายในกรอบ Support หลายระดับ`,
+  },
+  {
+    id: "art_20260620_001",
+    title: "LHSOLAR: ราคาปรับลง แต่โครงสร้างอุปสงค์ไม่ได้เปลี่ยน — แยก Noise ออกจาก Signal",
+    date: "2026-06-20",
+    funds: ["LHSOLAR"],
+    category: "fund-insight",
+    summary: "TAN ปรับลงตาม market risk แต่ให้ผลตอบแทน 12 เดือนราว 90.97% — อุปสงค์จาก AI Data Center + Solar PV 605 GW ในปี 2025 ยืนยันว่า structural demand ยังแข็งแกร่ง การปรับลงมักสร้างจุดเข้าลงทุนสำหรับนักลงทุนระยะกลาง",
+    content: `☀️ 1. การปรับลงของราคาเป็น Market Risk ไม่ใช่ Thesis ล้มเหลว
+
+ETF เชิงธีมที่มี beta สูงอย่าง TAN มักปรับลงแรงกว่า S&P 500 ในช่วงตลาดลง นี่คือลักษณะของ high-beta instrument ในช่วง 12 เดือนที่ผ่านมา TAN ให้ผลตอบแทนรวมราว 90.97% สูงกว่าตลาด broad base อย่างมีนัยสำคัญ
+
+☀️ 2. อุปสงค์พลังงานแสงอาทิตย์ยังเดินหน้า
+
+ปี 2025 พลังงานแสงอาทิตย์เป็นแหล่งพลังงานเดียวที่มีส่วนแบ่งการเติบโตของอุปสงค์พลังงานโลกมากที่สุดเป็นประวัติการณ์ คิดเป็น 27% ของการเติบโตทั้งหมด โลกติดตั้งกำลังผลิต Solar PV ใหม่รวม 605 GW ในปีเดียว ไม่มีแหล่งพลังงานใดทำได้เช่นนี้มาก่อน
+
+☀️ 3. AI + Data Center คือตัวเร่งที่ตลาดยังประเมินต่ำ
+
+IEA คาดความต้องการไฟฟ้าสหรัฐฯ จะเติบโตเฉลี่ยเกือบ 2% ต่อปีถึงปี 2030 ครึ่งหนึ่งจาก Data Center พลังงานแสงอาทิตย์คือแหล่งที่ตอบสนองได้เร็วที่สุด Google, Microsoft, Amazon ต่างผูกพัน PPA กับ Solar โดยตรง
+
+☀️ 4. การปรับลงมักสร้างจุดเข้าลงทุน
+
+TAN ฟื้นตัวแรงถึง 48% ในปี 2025 หลังผ่านช่วงตลาดขาลงหลายปี การปรับฐานใน market-wide selloff สำหรับ thematic ETF ที่มี structural tailwind มักเป็นช่วงที่ Risk/Reward ปรับดีขึ้น
+
+☀️ 5. ความเสี่ยงที่ต้องติดตาม
+
+▸ ความไม่แน่นอนของนโยบาย IRA Tax Credit — หากยกเลิกก่อนกำหนด การเติบโตในสหรัฐฯ อาจลดลงเกือบ 50%
+▸ แรงกดดันจากนโยบายภาษีนำเข้ากระทบ supply chain
+▸ ความเสี่ยงเหล่านี้ส่วนหนึ่งได้ถูก price-in แล้วในระดับราคาปัจจุบัน
+
+📌 สรุปสำหรับนักลงทุน LHSOLAR
+
+ตลาดที่ปรับลงสร้างความกังวลในระยะสั้น แต่ไม่ได้เปลี่ยน investment thesis โครงสร้างอุปสงค์จาก AI, Data Center และการเปลี่ยนผ่านพลังงานยังคงแข็งแกร่ง
+
+📗 ติดตาม: ความชัดเจนของนโยบาย IRA ผลประกอบการ FSLR และ ENPH และ PPA ระหว่าง Big Tech กับผู้ผลิต Solar`,
+  },
+  {
+    id: "art_20260622_001",
+    title: "สรุปสภาวะตลาดและข่าวสำคัญ วันจันทร์ที่ 22 มิถุนายน 2569",
+    date: "2026-06-22",
+    funds: ["LHSEMICON", "LHAI", "LHSPACE", "LHDRAM", "LHGBLOCK", "LHGAS", "LHGDEFENSE", "LHCYBER"],
+    category: "daily-brief",
+    summary: "S&P 500 ▲1.08% Nasdaq ▲1.91% — Nasdaq-100 ปรับโครงสร้างเพิ่ม CoreWeave, Nebius, Astera Labs, Rocket Lab / MU ทำ ATH $1,134 ก่อนรายงาน Q3 / HBM shortage เป็น structural shift / SpaceX เทรดสูงกว่า IPO 37% / ทองคำร่วงสัปดาห์ที่ 3 Goldman ลดเป้าเหลือ $4,900",
+    content: `📊 สรุปสภาวะตลาด
+
+🇺🇸 S&P 500: 7,500.58 (▲1.08%) | Nasdaq: 26,517.93 (▲1.91%) | Dow: 51,564.70 (▲0.14%)
+📉 US 10Y Yield: 4.45% (▼ หลัง Fed คงดอกเบี้ย) | DXY: 100.85 (ใกล้ 1 ปีสูงสุด)
+🏅 ทองคำ: ~$4,169/oz (▼ สัปดาห์ที่ 3) | Brent: ~$79/bbl (▲ หลัง Hormuz เปิด) | ทองแดง: ~$6.30/lb
+💰 Bitcoin: ~$63,900 (▲0.5% บรรยากาศระมัดระวัง)
+
+ตลาดเปิดอีกครั้งหลังหยุด Juneteenth sentiment ถูกกำหนดจาก Fed hawkish ภายใต้ Kevin Warsh vs AI/semiconductor ที่กลับมาเป็นปัจจัยขับหลัก
+
+🤖 Nasdaq ปรับโครงสร้าง Nasdaq-100 มีผลก่อนตลาดเปิดวันจันทร์ 22 มิ.ย.
+
+เพิ่ม: Astera Labs (ALAB), CoreWeave (CRWV), Nebius Group (NBIS), Rocket Lab (RKLB), Teradyne (TER)
+นำออก: Zscaler (ZS), Charter, Cognizant, Insmed, Verisk
+สะท้อนการกระจุกตัวสู่ธีม AI infrastructure กองทุน index tracking กว่า 200 ผลิตภัณฑ์มูลค่าเกิน $800B ต้องปรับพอร์ต → passive buying ที่ price-insensitive
+
+🚀 SpaceX (SPCX) IPO $135 ขึ้น 19% วันแรก ยังเทรดในโซน $185 (+37% จาก IPO)
+
+แม้ปรับลดจาก $225.64 (16 มิ.ย.) ตลาดประเมินโอกาส fast-track entry เข้า Nasdaq-100 ภายในต้น ก.ค. มูลค่าตลาด $1.8-2 ล้านล้านดอลลาร์เข้าเกณฑ์ top 40
+
+🧠 Micron (MU) ทำ ATH ที่ ~$1,134 ก่อนรายงาน Q3 FY26 วันที่ 24 มิ.ย.
+
+คาด revenue $33.5-34.8B / EPS ~$19.15-19.95 Options implied move สูงถึง 17% HBM capacity ขายหมดถึงปลายปี 2569
+
+🏦 Fed คงดอกเบี้ย 3.50-3.75% (12-0) แต่ 9/18 ส่งสัญญาณขึ้นอย่างน้อย 1 ครั้ง
+
+สัปดาห์นี้จับตา PCE Inflation พ.ค. และ GDP Q1 รอบสุดท้าย วันที่ 25 มิ.ย.
+
+🧬 Memory Chip Shortage เข้าสู่ระดับ Structural
+
+Samsung/SK Hynix ปรับขึ้นราคา server memory สูงถึง 70% Micron ยุติ consumer memory โฟกัส HBM เต็มตัว IDC ระบุเป็น structural shift Apple เตือนเรื่องต้นทุน memory ต่อซัพพลายเออร์
+
+🚀 Nebius Group (NBIS) เข้า Nasdaq-100 พร้อม Rocket Lab
+
+NBIS ราคา ~$232 (+158% YTD) รายได้ Q1 โต 684% YoY ที่ $399M Rocket Lab มี backlog $2.2B (+108% YoY) รายได้ Q1 ทำสถิติที่ $200.3M
+
+💾 Astera Labs (ALAB) เข้า Nasdaq-100 พร้อม momentum แข็งแกร่ง
+
+รายได้ Q1 $308.4M (+93% YoY) ราคาหุ้น +134% YTD Scorpio X-Series เริ่มจัดส่ง TAM ด้าน AI interconnect อาจแตะ $20B ในปี 2573
+
+🔐 CoreWeave (CRWV) GPU cloud provider มูลค่า $52.2B เข้า Nasdaq-100
+
+Revenue backlog $99.4B รองรับโดยสัญญา OpenAI $22.4B และ Meta $21B แม้มีหนี้ $17B ที่ค้ำประกันด้วย GPU
+
+🥇 ทองคำร่วงสัปดาห์ที่ 3 มาที่ ~$4,150/oz
+
+Goldman Sachs ปรับลดเป้าปลายปีเป็น $4,900 จาก $5,400 DXY แข็งค่าจาก Fed hawkish เป็น headwind แรงกว่า geopolitical tailwind
+
+📌 สรุปผลกระทบต่อกองทุน LHFund
+
+✅ LHSEMICON — HBM shortage เชิงโครงสร้าง + MU ทำ ATH ตอกย้ำ AI-driven pricing power
+✅ LHAI — Nasdaq-100 เพิ่ม CoreWeave, Nebius, Astera Labs ยืนยัน AI infrastructure
+✅ LHSPACE — Rocket Lab เข้า Nasdaq-100 + SpaceX อาจตามภายใน ก.ค.
+
+⚠️ LHGDEFENSE — หยุดยิง US-Iran ลด geopolitical premium แต่ 60 วันเจรจายังไม่ชัด
+⚠️ LHGBLOCK — Bitcoin เคลื่อนไหวแคบ $63,000-64,000 รอ PCE inflation
+⚠️ LHGAS — ราคาอยู่ในโซน transition หลัง Hormuz เปิด รอ OPEC+ ชี้ทิศ
+
+❌ LHCYBER — Zscaler ถูกนำออกจาก Nasdaq-100 อาจเพิ่มแรงขาย passive กดดัน sentiment
+
+Source: Bloomberg, CNBC, Goldman Sachs, IDC, Nasdaq, Seeking Alpha`,
+  },
+];
+
+function formatThaiDate(dateStr) {
+  const months = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  const d = new Date(dateStr + "T00:00:00");
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
+
+function formatThaiDateShort(dateStr) {
+  const months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  const d = new Date(dateStr + "T00:00:00");
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
+
+function RiskBadge({ level }) {
+  const bg = level >= 7 ? "#dc2626" : level >= 5 ? "#f59e0b" : "#10b981";
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: bg, color: "#fff", fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+      {level}
+    </span>
+  );
+}
+
+function FundTag({ fund, small }) {
+  const meta = FUND_META[fund];
+  if (!meta) return null;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: small ? 3 : 4, padding: small ? "1px 6px" : "2px 10px", borderRadius: 999, fontSize: small ? 10 : 11, fontWeight: 600, color: meta.color, background: meta.color + "14", border: `1px solid ${meta.color}30`, whiteSpace: "nowrap" }}>
+      <span style={{ width: small ? 5 : 6, height: small ? 5 : 6, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />
+      {meta.name}
+    </span>
+  );
+}
+
+function ContentRenderer({ content }) {
+  const lines = content.split("\n");
+  return (
+    <div style={{ lineHeight: 1.8, color: "#1e293b" }}>
+      {lines.map((line, i) => {
+        const t = line.trim();
+        if (!t) return <div key={i} style={{ height: 12 }} />;
+        const isH = /^(🔹|📉|🤖|🏭|🔬|📌|👥|📗|📕|📘|🛡️|📊|🧠|🌍|📈|🔎|🏗️|🕊️|🧭|💰|🚀|📋|🇹🇭)/.test(t);
+        const isHi = /^(💡|👉|⚠️)/.test(t);
+        const isBul = /^(▸|✅|❌)/.test(t);
+        const isSec = /^(ทำไม|วิเคราะห์|ปัจจัยบวก|พื้นฐาน:|[1-4]️⃣)/.test(t);
+        if (isH) return <p key={i} style={{ fontWeight: 700, fontSize: 15, color: "#0f766e", marginTop: 20, marginBottom: 6, borderLeft: "3px solid #0d9488", paddingLeft: 12 }}>{t}</p>;
+        if (isHi) return <p key={i} style={{ fontWeight: 600, fontSize: 14, color: "#0f766e", margin: "10px 0 4px", padding: "8px 12px", background: "#f0fdfa", borderRadius: 6, border: "1px solid #ccfbf1" }}>{t}</p>;
+        if (isBul) return <p key={i} style={{ fontSize: 14, color: "#334155", margin: "3px 0", paddingLeft: 8 }}>{t}</p>;
+        if (isSec) return <p key={i} style={{ fontWeight: 700, fontSize: 16, color: "#134e4a", marginTop: 24, marginBottom: 8 }}>{t}</p>;
+        if (t.startsWith("Source:")) return <p key={i} style={{ fontSize: 11, color: "#94a3b8", marginTop: 20, fontStyle: "italic" }}>{t}</p>;
+        return <p key={i} style={{ margin: "4px 0", fontSize: 14, color: "#334155" }}>{t}</p>;
+      })}
+    </div>
+  );
+}
+
+function Sidebar({ portfolio, onFundClick }) {
+  return (
+    <div style={{ width: 280, flexShrink: 0, background: "#fff", borderRight: "1px solid #e2e8f0", overflowY: "auto", height: "100%" }}>
+      {/* Sidebar Header */}
+      <div style={{ padding: "16px 14px 12px", background: "linear-gradient(135deg, #115e59 0%, #0f766e 100%)", color: "#fff" }}>
+        <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.7, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 4 }}>LH Fund Select</div>
+        <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.3 }}>Core-Satellite</div>
+        <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.3 }}>Portfolio Strategy</div>
+      </div>
+
+      {/* Core Portfolio */}
+      <div style={{ padding: "14px 14px 10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <div style={{ background: "#0d9488", color: "#fff", fontSize: 13, fontWeight: 800, padding: "3px 10px", borderRadius: 6 }}>{portfolio.core.weight}</div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#134e4a" }}>{portfolio.core.title}</span>
+        </div>
+        <p style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5, margin: "0 0 10px" }}>{portfolio.core.desc}</p>
+        {portfolio.core.funds.map((f) => (
+          <div key={f.code} onClick={() => onFundClick(f.code)} style={{ padding: "10px 12px", background: "#f0fdfa", borderRadius: 8, marginBottom: 8, border: "1px solid #ccfbf1", cursor: "pointer", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#0d9488"; e.currentTarget.style.background = "#ccfbf1"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#ccfbf1"; e.currentTarget.style.background = "#f0fdfa"; }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <RiskBadge level={f.risk} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#134e4a" }}>{f.code}</span>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#0f766e", marginBottom: 2 }}>{f.name}</div>
+            <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.4 }}>{f.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ height: 1, background: "#e2e8f0", margin: "0 14px" }} />
+
+      {/* Satellite Portfolio */}
+      <div style={{ padding: "14px 14px 10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <div style={{ background: "#14b8a6", color: "#fff", fontSize: 13, fontWeight: 800, padding: "3px 10px", borderRadius: 6 }}>{portfolio.satellite.weight}</div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#134e4a" }}>{portfolio.satellite.title}</span>
+        </div>
+        <p style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5, margin: "0 0 12px" }}>{portfolio.satellite.desc}</p>
+
+        {portfolio.satellite.strategies.map((strat, si) => (
+          <div key={si} style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#0f766e", marginBottom: 6, padding: "3px 8px", background: "#f0fdfa", borderRadius: 4, display: "inline-block", border: "1px solid #ccfbf1" }}>
+              ({si + 1}) {strat.name}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {strat.funds.map((f) => (
+                <div key={f.code} onClick={() => onFundClick(f.code)} style={{ flex: 1, padding: "8px 8px", background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", cursor: "pointer", textAlign: "center", transition: "all 0.15s" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#0d9488"; e.currentTarget.style.background = "#f0fdfa"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#f8fafc"; }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+                    <RiskBadge level={f.risk} />
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#134e4a" }}>{f.code}</div>
+                  <div style={{ fontSize: 9, color: "#64748b", marginTop: 1 }}>{f.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: "10px 14px 16px" }}>
+        <div style={{ fontSize: 9, color: "#94a3b8", lineHeight: 1.4, textAlign: "center" }}>
+          ⚠️ ข้อมูลเพื่อการศึกษาเท่านั้น ไม่ถือเป็นคำแนะนำการลงทุน
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TechnicalPanel({ data }) {
+  if (!data || !data.funds) return null;
+  return (
+    <div style={{ width: 250, flexShrink: 0, background: "#fff", borderLeft: "1px solid #e2e8f0", overflowY: "auto", height: "100%" }}>
+      <div style={{ padding: "14px 12px 10px", background: "linear-gradient(135deg, #134e4a 0%, #115e59 100%)", color: "#fff" }}>
+        <div style={{ fontSize: 10, fontWeight: 600, opacity: 0.7, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 2 }}>Technical Analysis</div>
+        <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.3 }}>แนวรับ — แนวต้าน</div>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>อัปเดต: {data.asOf}</div>
+      </div>
+      <div style={{ padding: "8px 10px" }}>
+        {data.funds.map((f) => {
+          const meta = FUND_META[f.code];
+          return (
+            <div key={f.code} style={{ padding: "8px 8px", borderBottom: "1px solid #f1f5f9", marginBottom: 2 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+                {meta && <span style={{ width: 6, height: 6, borderRadius: "50%", background: meta.color, flexShrink: 0 }} />}
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#134e4a" }}>{f.code}</span>
+                <span style={{ fontSize: 9, color: "#94a3b8", fontWeight: 500 }}>{f.etf}</span>
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                <div style={{ flex: 1, background: "#fef2f2", borderRadius: 5, padding: "4px 6px", border: "1px solid #fecaca" }}>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: "#dc2626", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 2 }}>แนวรับ</div>
+                  {f.sup.map((v, i) => (
+                    <div key={i} style={{ fontSize: 11, fontWeight: 700, color: "#b91c1c", lineHeight: 1.4 }}>${v}</div>
+                  ))}
+                </div>
+                <div style={{ flex: 1, background: "#f0fdf4", borderRadius: 5, padding: "4px 6px", border: "1px solid #bbf7d0" }}>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: "#16a34a", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 2 }}>แนวต้าน</div>
+                  {f.res.map((v, i) => (
+                    <div key={i} style={{ fontSize: 11, fontWeight: 700, color: "#15803d", lineHeight: 1.4 }}>${v}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ padding: "6px 12px 14px" }}>
+        <div style={{ fontSize: 8, color: "#94a3b8", lineHeight: 1.4, textAlign: "center" }}>
+          ⚠️ ข้อมูลทางเทคนิคเพื่อประกอบการตัดสินใจ ไม่ถือเป็นคำแนะนำ
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LHFundResearchHub() {
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFund, setSelectedFund] = useState("ALL");
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [stats, setStats] = useState({ total: 0, funds: 0, latest: "" });
+  const [technicals, setTechnicals] = useState(INITIAL_TECHNICALS);
+
+  const loadArticles = useCallback(async () => {
+    setLoading(true);
+    setTechnicals(INITIAL_TECHNICALS);
+    setArticles(INITIAL_ARTICLES);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadArticles(); }, [loadArticles]);
+
+  useEffect(() => {
+    if (articles.length > 0) {
+      const allFunds = new Set();
+      articles.forEach((a) => a.funds.forEach((f) => allFunds.add(f)));
+      const sorted = [...articles].sort((a, b) => b.date.localeCompare(a.date));
+      setStats({ total: articles.length, funds: allFunds.size, latest: sorted[0]?.date || "" });
+    }
+  }, [articles]);
+
+  const activeFunds = useMemo(() => {
+    const s = new Set();
+    articles.forEach((a) => a.funds.forEach((f) => s.add(f)));
+    return [...s].sort();
+  }, [articles]);
+
+  const filtered = useMemo(() => {
+    let result = [...articles];
+    if (selectedFund !== "ALL") result = result.filter((a) => a.funds.includes(selectedFund));
+    result.sort((a, b) => b.date.localeCompare(a.date));
+    return result;
+  }, [articles, selectedFund]);
+
+  const groupedByDate = useMemo(() => {
+    const groups = {};
+    filtered.forEach((a) => { if (!groups[a.date]) groups[a.date] = []; groups[a.date].push(a); });
+    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+  }, [filtered]);
+
+  const handleFundClick = (code) => {
+    setSelectedFund(code);
+    setSelectedArticle(null);
+    setSidebarOpen(false);
+  };
+
+  // Article Detail View
+  if (selectedArticle) {
+    const art = selectedArticle;
+    return (
+      <div style={{ minHeight: "100vh", background: "#f0fdfa", fontFamily: "'Prompt', sans-serif" }}>
+        <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #115e59 100%)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 100 }}>
+          <button onClick={() => setSelectedArticle(null)} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>← กลับ</button>
+          <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: 500 }}>{CATEGORY_ICONS[art.category]} {CATEGORY_LABELS[art.category]}</div>
+        </div>
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 20px 60px" }}>
+          <div style={{ color: "#0f766e", fontSize: 12, fontWeight: 600, marginBottom: 8 }}>📅 {formatThaiDate(art.date)}</div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#134e4a", lineHeight: 1.4, margin: "0 0 12px" }}>{art.title}</h1>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>{art.funds.map((f) => <FundTag key={f} fund={f} />)}</div>
+          <div style={{ background: "#fff", borderRadius: 12, padding: "24px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)", border: "1px solid #e2e8f0" }}>
+            <ContentRenderer content={art.content} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Layout
+  return (
+    <div style={{ minHeight: "100vh", background: "#f0fdfa", fontFamily: "'Prompt', sans-serif", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg, #0d9488 0%, #115e59 100%)", padding: "20px 20px 16px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+        <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Mobile sidebar toggle */}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 16, display: "none", flexShrink: 0 }} className="sidebar-toggle">☰</button>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff", fontSize: 14, flexShrink: 0 }}>LH</div>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>LHFund Research Hub</h1>
+            <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.7)" }}>บทวิเคราะห์และข่าวสารการลงทุน</p>
+          </div>
+          {!loading && (
+            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{stats.total}</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>บทความ</div>
+              </div>
+              <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.15)" }} />
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{stats.funds}</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>กองทุน</div>
+              </div>
+              <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.15)" }} />
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{stats.latest ? formatThaiDateShort(stats.latest) : "—"}</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>อัปเดตล่าสุด</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap');
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @media (max-width: 1024px) {
+          .right-panel { display: none !important; }
+        }
+        @media (max-width: 768px) {
+          .sidebar-toggle { display: flex !important; }
+          .sidebar-panel { position: fixed !important; left: 0; top: 0; bottom: 0; z-index: 200; transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+          .sidebar-panel.open { transform: translateX(0); }
+          .sidebar-overlay { display: block !important; }
+        }
+      `}</style>
+
+      {/* Body: Sidebar + Content */}
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        {/* Mobile overlay */}
+        {sidebarOpen && <div className="sidebar-overlay" style={{ display: "none", position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 199 }} onClick={() => setSidebarOpen(false)} />}
+
+        {/* Sidebar */}
+        <div className={`sidebar-panel ${sidebarOpen ? "open" : ""}`} style={{ position: "sticky", top: 0, height: "calc(100vh - 72px)", overflowY: "auto" }}>
+          <Sidebar portfolio={PORTFOLIO_DATA} onFundClick={handleFundClick} />
+        </div>
+
+        {/* Main Content */}
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+          {/* Fund Filter */}
+          <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "10px 16px", position: "sticky", top: 0, zIndex: 50, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", gap: 5, overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", paddingBottom: 2 }}>
+              <button onClick={() => { setSelectedFund("ALL"); setSidebarOpen(false); }} style={{ padding: "4px 12px", borderRadius: 999, border: selectedFund === "ALL" ? "1.5px solid #0d9488" : "1px solid #e2e8f0", background: selectedFund === "ALL" ? "#0d9488" : "#fff", color: selectedFund === "ALL" ? "#fff" : "#64748b", fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>ทั้งหมด</button>
+              {activeFunds.map((f) => {
+                const isA = selectedFund === f;
+                const m = FUND_META[f];
+                return (
+                  <button key={f} onClick={() => { setSelectedFund(f); setSidebarOpen(false); }} style={{ padding: "4px 10px", borderRadius: 999, border: isA ? `1.5px solid ${m?.color||"#0d9488"}` : "1px solid #e2e8f0", background: isA ? (m?.color||"#0d9488") : "#fff", color: isA ? "#fff" : "#64748b", fontSize: 10, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}>
+                    {!isA && m && <span style={{ width: 5, height: 5, borderRadius: "50%", background: m.color }} />}
+                    {f}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Articles */}
+          <div style={{ flex: 1, padding: "16px 16px 40px", overflowY: "auto" }}>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: 60, color: "#94a3b8", fontSize: 14 }}>
+                <div style={{ width: 32, height: 32, border: "3px solid #e2e8f0", borderTopColor: "#0d9488", borderRadius: "50%", margin: "0 auto 12px", animation: "spin 1s linear infinite" }} />
+                กำลังโหลดข้อมูล...
+              </div>
+            ) : groupedByDate.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 60, color: "#94a3b8", fontSize: 14 }}>ยังไม่มีบทความสำหรับกองทุนที่เลือก</div>
+            ) : (
+              groupedByDate.map(([date, dateArticles]) => (
+                <div key={date} style={{ marginBottom: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <div style={{ background: "linear-gradient(135deg, #0d9488, #0f766e)", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>📅 {formatThaiDate(date)}</div>
+                    <div style={{ flex: 1, height: 1, background: "#d1d5db" }} />
+                    <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>{dateArticles.length} บทความ</div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {dateArticles.map((article) => (
+                      <div key={article.id} onClick={() => setSelectedArticle(article)}
+                        style={{ background: "#fff", borderRadius: 10, padding: "14px 16px", border: "1px solid #e2e8f0", cursor: "pointer", transition: "all 0.15s", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = "#0d9488"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(13,148,136,0.12)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.04)"; }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#0f766e", background: "#ccfbf1", padding: "2px 7px", borderRadius: 4 }}>{CATEGORY_ICONS[article.category]} {CATEGORY_LABELS[article.category]}</span>
+                        </div>
+                        <h3 style={{ margin: "0 0 6px", fontSize: 14, fontWeight: 700, color: "#134e4a", lineHeight: 1.4 }}>{article.title}</h3>
+                        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#64748b", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{article.summary}</p>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {article.funds.slice(0, 4).map((f) => <FundTag key={f} fund={f} small />)}
+                            {article.funds.length > 4 && <span style={{ fontSize: 9, color: "#94a3b8", padding: "1px 5px", background: "#f1f5f9", borderRadius: 999, fontWeight: 600 }}>+{article.funds.length - 4}</span>}
+                          </div>
+                          <span style={{ fontSize: 11, color: "#0d9488", fontWeight: 600, flexShrink: 0 }}>อ่านต่อ →</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{ background: "#115e59", color: "rgba(255,255,255,0.5)", textAlign: "center", padding: "12px 16px", fontSize: 10, flexShrink: 0 }}>
+            LHFund Research Hub — บทวิเคราะห์เพื่อการศึกษาเท่านั้น ไม่ถือเป็นคำแนะนำการลงทุน
+          </div>
+        </div>
+
+        {/* Right Panel: Technicals */}
+        <div className="right-panel" style={{ position: "sticky", top: 0, height: "calc(100vh - 72px)", overflowY: "auto" }}>
+          <TechnicalPanel data={technicals} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<LHFundResearchHub />);
+  </script>
+</body>
+</html>
